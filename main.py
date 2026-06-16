@@ -58,7 +58,13 @@ for post in posts:
 
     post_text_parts = post_text.split("+++")
     bpost_title = post_text_parts[1]
-    bpost_text = post_text_parts[2]
+    bpost_text = post_text_parts[2].lstrip('\r\n')
+
+    if not bpost_title or not bpost_text:
+        with open("published_posts.txt", "a") as f:
+            f.writelines(post_id + "\n")
+        print(f"Post {post_id} is missing title or text, skipping")
+        continue
 
     bpost_featured_image_id = None
 
