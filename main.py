@@ -14,6 +14,8 @@ wordpress_username = os.environ["WORDPRESS_USERNAME"]
 wordpress_password = os.environ["WORDPRESS_PASSWORD"]
 wordpress_base_url = os.environ["WORDPRESS_URL"]
 
+post_min_date = os.environ.get("POST_MIN_DATE", None) # YYYY-MM-DD
+
 def publish_wordpress_post(title, text, date: str, featured_image_id=None):
     date = date.split("+")[0]
     r = requests.post(f"{wordpress_base_url}wp-json/wp/v2/posts",
@@ -52,6 +54,13 @@ for post in posts:
     post_text: str = post["message"]
     post_id: str = post["id"]
     post_date_str: str = post["created_time"]
+
+    if post_min_date and post_date_str.split("T")[0] < post_min_date:
+        with open("published_posts.txt", "a") as f:
+            f.writelines(post_id + "\n")
+        print(f"Post {post_id} is older than min date, skipping")
+        continue
+
 
     if post_id in published_posts:
         continue
