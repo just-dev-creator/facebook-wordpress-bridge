@@ -19,14 +19,18 @@ post_min_date = os.environ.get("POST_MIN_DATE", None) # YYYY-MM-DD
 def publish_wordpress_post(title, text, date: str, featured_image_id=None):
     date = date.split("+")[0]
     r = requests.post(f"{wordpress_base_url}wp-json/wp/v2/posts",
-                      {
+                      json={
                           "date": date,
-                          "status": "publish",
+                          "status": "draft",
                           "title": title,
                           "content": text,
                           "featured_media": featured_image_id
-                      }, auth=(wordpress_username, wordpress_password))
-    print(r.text)
+                      }, auth=(wordpress_username, wordpress_password),
+                      headers={
+                        "Content-Type": "application/json",
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.3"
+                      })
+    print(f"Published post {title} with status code {r.status_code}")
 
 # Get page access token
 
@@ -51,9 +55,11 @@ if not posts:
     exit(-1)
 
 for post in posts:
-    post_text: str = post["message"]
     post_id: str = post["id"]
     post_date_str: str = post["created_time"]
+
+    if post_id in published_posts:
+        continue
 
     if post_min_date and post_date_str.split("T")[0] < post_min_date:
         with open("published_posts.txt", "a") as f:
@@ -61,9 +67,13 @@ for post in posts:
         print(f"Post {post_id} is older than min date, skipping")
         continue
 
-
-    if post_id in published_posts:
+    if not "message" in post:
+        with open("published_posts.txt", "a") as f:
+            f.writelines(post["id"] + "\n")
+        print(f"Post {post['id']} has no message, skipping")
         continue
+
+    post_text: str = post["message"]
 
     post_text_parts = post_text.split("+++")
     bpost_title = post_text_parts[1]
@@ -97,14 +107,13 @@ for post in posts:
                 media_upload_response = requests.post(f"{wordpress_base_url}wp-json/wp/v2/media",
                     headers={
                         "Content-Disposition": f'attachment; filename="{media_filename}"',
-                        "Content-Type": media_response.headers["Content-Type"]
+                        "Content-Type": media_response.headers["Content-Type"],
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.3"
                     },
                     data=media_response.content,
                     auth=(wordpress_username, wordpress_password)
                 )
                 media_upload_response_json = media_upload_response.json()
-
-                print(media_upload_response_json)
 
                 if "id" in media_upload_response_json:
                     media_id = media_upload_response_json["id"]
