@@ -103,12 +103,9 @@ for post in posts:
 
     bpost_title = bpost_text = None
 
-    print(post_text)
-
     post_text_parts = post_text.split("+++")
     if not len(post_text_parts) >= 3:
         post_text_parts = post_text.split("\n")
-        print(post_text_parts)
         if len(post_text_parts) >= 2:
             bpost_title=post_text_parts[0]
             bpost_text="\n".join(post_text_parts[1:]).lstrip('\r\n')
@@ -129,8 +126,6 @@ for post in posts:
 
         if "subattachments" in attachments[0]:
             attachments = attachments[0]["subattachments"]["data"]
-
-        print(attachments)
 
         for attachment in attachments:
             if "media" in attachment:
